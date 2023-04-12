@@ -2,7 +2,7 @@ import cv2, os
 import numpy as np
 from PIL import Image
 
-faceTypes = ["happy", "normal", "sad", "sleepy", "surprised", "wink"]
+faceTypes = ["angry", "disgusted", "fearful", "happy", "neutral", "sad", "surprised"]
 face_images = []
 face_labels = []
 
@@ -14,35 +14,31 @@ def cleanup_faces_folder():
             os.remove("faces/" + filename)
             print("removed file: " + "faces/" + filename)
 
-
-def get_subjects_length():
-    return 18    
+ 
 
 def create_model():
-    global face_images, face_labels
-    for i in range(0, get_subjects_length()):
-        subject = i
-        if (subject < 10):
-            subject = "0" + str(subject)
+    global face_images
+    global face_labels
 
-        for j in range (0, len(faceTypes)):
-            #Get the file name
-            filename = "subject" + str(subject) + "." + str(faceTypes[j]) + ".png"
-            #Does the file exist?
-            if not os.path.isfile("faces/" + filename):
-                print("no file: " + "faces/" + filename)
+    for i in range (0, len(faceTypes)):
+        for filename in os.listdir("faces/" + faceTypes[i] + "/"):
+            print(filename)
+            #Skip over 9/10 of the images to speed up training
+            if (np.random.randint(0, 10) > 0):
                 continue
-            # Load the image
-            image = cv2.imread("faces/" + filename, cv2.IMREAD_GRAYSCALE)
+            
+            #Does the file exist?
+            if not os.path.isfile("faces/" + str(faceTypes[i]) + "/" + filename):
+                print ("skipped file: faces/" + str(faceTypes[i])+ "/" + filename)
+                continue
+            image = cv2.imread("faces/"+ str(faceTypes[i]) + "/" + filename, cv2.IMREAD_GRAYSCALE)
             if (image is None):
                 print("image is none: " + "faces/" + filename)
                 continue
             image = cv2.resize(image, (100, 100))
             face_images.append(image)
-            print(str(j))
-            face_labels.append(j)
-
-            print ("appended image: " + "faces/" + filename + " label: " + str(faceTypes[j]))
+            face_labels.append(i)
+            print(str(filename))
 
     print("Creating model...")    
     # Create the LBPH model
@@ -52,10 +48,20 @@ def create_model():
     # Train the model on the face images and labels
     model.train(face_images, face_labels)
     print("Model created!")
+    #Save the model
+    model.save("model.yml")
     return model
 
+if (os.path.isfile("model.yml")):
+    print("Loading cached model...")
+    model = cv2.face.LBPHFaceRecognizer_create()
+    model.read("model.yml")
+    print("Model loaded!")
+else:
+    print("No cached model found, creating new model...")
+    model = create_model()
 
-model = create_model()
+
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 #Setup webcam
 print("starting webcam, please wait...")
