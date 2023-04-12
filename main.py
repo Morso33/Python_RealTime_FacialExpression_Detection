@@ -2,7 +2,7 @@ import cv2, os
 import numpy as np
 from PIL import Image
 
-faceTypes = ["glasses", "happy", "leftlight", "noglasses", "normal", "rightlight", "sad", "sleepy", "surprised", "wink", "Slave"]
+faceTypes = ["glasses", "happy", "leftlight", "noglasses", "normal", "rightlight", "sad", "sleepy", "surprised", "wink",]
 face_images = []
 face_labels = []
 
