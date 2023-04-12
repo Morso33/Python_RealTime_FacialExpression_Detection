@@ -2,13 +2,21 @@ import cv2, os
 import numpy as np
 from PIL import Image
 
-faceTypes = ["glasses", "happy", "leftlight", "noglasses", "normal", "rightlight", "sad", "sleepy", "surprised", "wink"]
+faceTypes = ["happy", "normal", "sad", "sleepy", "surprised", "wink"]
 face_images = []
 face_labels = []
 
 
+def cleanup_faces_folder():
+    #If file is not a png, delete it
+    for filename in os.listdir("faces/"):
+        if not filename.endswith(".png"):
+            os.remove("faces/" + filename)
+            print("removed file: " + "faces/" + filename)
+
+
 def get_subjects_length():
-    return 18
+    return 18    
 
 def create_model():
     global face_images, face_labels
@@ -19,20 +27,22 @@ def create_model():
 
         for j in range (0, len(faceTypes)):
             #Get the file name
-            filename = "subject" + str(subject) + "." + str(faceTypes[j])
+            filename = "subject" + str(subject) + "." + str(faceTypes[j]) + ".png"
             #Does the file exist?
             if not os.path.isfile("faces/" + filename):
+                print("no file: " + "faces/" + filename)
                 continue
-            print ("Loaded " + filename)
             # Load the image
             image = cv2.imread("faces/" + filename, cv2.IMREAD_GRAYSCALE)
-            #Did it load correctly?
-            if image is None:
-                print("Error loading image: " + filename)
+            if (image is None):
+                print("image is none: " + "faces/" + filename)
                 continue
             image = cv2.resize(image, (100, 100))
             face_images.append(image)
+            print(str(j))
             face_labels.append(j)
+
+            print ("appended image: " + "faces/" + filename + " label: " + str(faceTypes[j]))
 
     print("Creating model...")    
     # Create the LBPH model
@@ -43,6 +53,7 @@ def create_model():
     model.train(face_images, face_labels)
     print("Model created!")
     return model
+
 
 model = create_model()
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
@@ -76,6 +87,10 @@ while True:
         font = cv2.FONT_HERSHEY_SIMPLEX
         label_text = "Emotion: " + str(faceTypes[label])
         cv2.putText(gray, label_text, (x, y-10), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
+        #Display the confidence
+        confidence_text = "Confidence: " + str(confidence)
+        cv2.putText(gray, confidence_text, (x, y-30), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
+        
 
         # Draw a rectangle around the face
         cv2.rectangle(gray, (x, y), (x+w, y+h), (0, 255, 0), 2)
